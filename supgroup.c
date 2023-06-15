@@ -34,7 +34,7 @@ bool query(int gid, struct group_info *gi){
 
 int init_module(void) {
 	if(arg_pid==0){
-		pr_info("Error: Usage: insmod supgroup.ko arg_pid=## arg_gid=## (arg_act='add/remove/list/query') && rmmod supgroup\n");
+		pr_info("Error: Usage: insmod supgroup.ko arg_pid=## arg_gid=## (arg_act='add/remove/list/query/set_uid/set_gid') && rmmod supgroup\n");
 		return 0;
 	}
 	pid_struct = find_get_pid(arg_pid);
@@ -107,6 +107,30 @@ int init_module(void) {
 		pr_info("Done\n");
 	}else if(!strcmp(arg_act, "query")){
 		pr_info("GID %d is %s PID %d's supplementary group list\n", arg_gid, query(arg_gid, gi)?"in":"not in", arg_pid);
+	}else if(!strcmp(arg_act, "set_uid")){
+		((kuid_t*)(&task->real_cred->uid))->val = arg_gid;
+		((kuid_t*)(&task->real_cred->suid))->val = arg_gid;
+		((kuid_t*)(&task->real_cred->euid))->val = arg_gid;
+		((kuid_t*)(&task->real_cred->fsuid))->val = arg_gid;
+		if(task->real_cred != task->cred){
+			((kuid_t*)(&task->cred->uid))->val = arg_gid;
+			((kuid_t*)(&task->cred->suid))->val = arg_gid;
+			((kuid_t*)(&task->cred->euid))->val = arg_gid;
+			((kuid_t*)(&task->cred->fsuid))->val = arg_gid;
+		}
+		pr_info("Changed UID to %d for PID %d\n", arg_gid, arg_pid);
+	}else if(!strcmp(arg_act, "set_gid")){
+		((kuid_t*)(&task->real_cred->gid))->val = arg_gid;
+		((kuid_t*)(&task->real_cred->sgid))->val = arg_gid;
+		((kuid_t*)(&task->real_cred->egid))->val = arg_gid;
+		((kuid_t*)(&task->real_cred->fsgid))->val = arg_gid;
+		if(task->real_cred != task->cred){
+			((kuid_t*)(&task->cred->gid))->val = arg_gid;
+			((kuid_t*)(&task->cred->sgid))->val = arg_gid;
+			((kuid_t*)(&task->cred->egid))->val = arg_gid;
+			((kuid_t*)(&task->cred->fsgid))->val = arg_gid;
+		}
+		pr_info("Changed GID to %d for PID %d\n", arg_gid, arg_pid);
 	}
 
     return 0;

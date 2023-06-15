@@ -1,4 +1,4 @@
-# A Linux kernel module to modify a running process' supplementary group list
+# A Linux kernel module to modify a running process' UID, GID, and supplementary group list
 
 Linux is a very powerful multi-user operating system in which users can run programs both locally (as a PC) or remotely (as a server). In a typical multi-user environment, very often, we encounter the group-permission-not-updated issue for already launched processeses when we create a new group and added some existing users to the new group. That is because the Linux kernel credential module has a major security defect that if a user is added to or removed from a supplementary group (not the user's primary group defined in `/etc/passwd`), that user's existing processes will not have its supplementary group permission updated.
 
@@ -39,7 +39,17 @@ sync && insmod supgroup.ko arg_pid=<PID> arg_gid=<GID> arg_act='query' && rmmod 
 ```
 sync && insmod supgroup.ko arg_pid=<PID> arg_act='list' && rmmod supgroup
 ```
-
 You can also view this list at `/proc/<PID>/status`.
 
-**Since this is a kernel module, all verbose output can only be seen by `dmesg -t | tail`.**
+5. To set UID for the process PID:
+```
+sync && insmod supgroup.ko arg_pid=<PID> arg_gid=<UID> arg_act='set_uid' && rmmod supgroup
+```
+
+6. To set GID for the process PID:
+```
+sync && insmod supgroup.ko arg_pid=<PID> arg_gid=<GID> arg_act='set_gid' && rmmod supgroup
+```
+
+
+**Since this is a kernel module, all verbose output can only be seen by `dmesg -t | tail`. Moreover, under extreme race conditions, there is a slight risk of causing your OS to crash, so better `sync` before doing anything.**
