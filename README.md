@@ -15,40 +15,40 @@ This kernel-module program is created to add or remove a supplementary group (by
 ## How to compile
 1. Login as root (e.g., `sudo su` or `su`)
 2. `cd` into the project folder and run `make`
-3. If compilation is successful, `supgroup.ko` will be generated
+3. If compilation is successful, `chown-pid.ko` will be generated
 4. `sudo make` will NOT work (unless you append the option `Defaults env_keep += "PWD"` to `/etc/sudoers` which is not secure)
 
 ## How to run
 1. To add a supplementary group GID to a process PID:
 ```
-sync && insmod supgroup.ko arg_pid=<PID> arg_gid=<GID> arg_act='add' && rmmod supgroup
+sync && insmod chown-pid.ko arg_pid=<PID> arg_gid=<GID> arg_act='add' && rmmod chown-pid
 ```
 in which `arg_act='add'` is optional (default argument).
 
 2. To remove a supplementary group GID from a process PID:
 ```
-sync && insmod supgroup.ko arg_pid=<PID> arg_gid=<GID> arg_act='remove' && rmmod supgroup
+sync && insmod chown-pid.ko arg_pid=<PID> arg_gid=<GID> arg_act='remove' && rmmod chown-pid
 ```
 
 3. To enquire whether a GID is inside the process' supplementary group list:
 ```
-sync && insmod supgroup.ko arg_pid=<PID> arg_gid=<GID> arg_act='query' && rmmod supgroup
+sync && insmod chown-pid.ko arg_pid=<PID> arg_gid=<GID> arg_act='query' && rmmod chown-pid
 ```
 
 4. To list all GIDs under the process PID:
 ```
-sync && insmod supgroup.ko arg_pid=<PID> arg_act='list' && rmmod supgroup
+sync && insmod chown-pid.ko arg_pid=<PID> arg_act='list' && rmmod chown-pid
 ```
 You can also view this list at `/proc/<PID>/status`.
 
 5. To set UID for the process PID:
 ```
-sync && insmod supgroup.ko arg_pid=<PID> arg_gid=<UID> arg_act='set_uid' && rmmod supgroup
+sync && insmod chown-pid.ko arg_pid=<PID> arg_gid=<UID> arg_act='set_uid' && rmmod chown-pid
 ```
 
 6. To set GID for the process PID:
 ```
-sync && insmod supgroup.ko arg_pid=<PID> arg_gid=<GID> arg_act='set_gid' && rmmod supgroup
+sync && insmod chown-pid.ko arg_pid=<PID> arg_gid=<GID> arg_act='set_gid' && rmmod chown-pid
 ```
 
 

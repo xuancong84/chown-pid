@@ -1,4 +1,4 @@
-obj-m += supgroup.o  
+obj-m += chown-pid.o  
 
 PWD := ${PWD}
 
