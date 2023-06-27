@@ -27,7 +27,8 @@ struct group_info *gi = NULL;
 struct group_info *new_gi = NULL;
 
 bool query(int gid, struct group_info *gi){
-	for(int x=0; x<gi->ngroups; ++x)
+	int x;
+	for(x=0; x<gi->ngroups; ++x)
 		if(gid==gi->gid[x].val) return true;
 	return false;
 }
@@ -67,7 +68,8 @@ int init_module(void) {
 			pr_info("Error: groups_alloc() failed, out of kernel memory?\n");
 			return 0;
 		}
-		for(int x=0; x<gi->ngroups; ++x)
+		int x;
+		for(x=0; x<gi->ngroups; ++x)
 			new_gi->gid[x] = gi->gid[x];
 		new_gi->gid[gi->ngroups].val = arg_gid;
 		groups_sort(new_gi);
@@ -88,7 +90,8 @@ int init_module(void) {
 			pr_info("Error: groups_alloc() failed, out of kernel memory?\n");
 			return 0;
 		}
-		for(int x=0,y=0; x<gi->ngroups; ++x)
+		int x,y;
+		for(x=0,y=0; x<gi->ngroups; ++x)
 			if(gi->gid[x].val != arg_gid){
 				new_gi->gid[y] = gi->gid[x];
 				y++;
@@ -102,7 +105,8 @@ int init_module(void) {
 		pr_info("Removed GID %d from PID %d's supplementary groups\n", arg_gid, arg_pid);
 	}else if(!strcmp(arg_act, "list")){
 		pr_info("Listing PID %d's supplementary groups' GIDs: ", arg_pid);
-		for(int x=0; x<gi->ngroups; ++x)
+		int x;
+		for(x=0; x<gi->ngroups; ++x)
 			pr_info("%d ", gi->gid[x].val);
 		pr_info("Done\n");
 	}else if(!strcmp(arg_act, "query")){
