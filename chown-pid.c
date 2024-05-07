@@ -6,18 +6,23 @@
 #include <linux/printk.h>
 #include <linux/sched.h>
 #include <linux/uidgid.h>
+#include <linux/kernel.h>
+#include <linux/sched/signal.h>
 
 
-static int arg_pid=0;
-static int arg_gid=0;
+static pid_t arg_pid=0;
+static pid_t arg_gid=0;
+static pid_t arg_uid=0;
 static char *arg_act="add";
 
 module_param(arg_pid, int, 0);
 MODULE_PARM_DESC(arg_pid, "PID of the process");
+module_param(arg_uid, int, 0);
+MODULE_PARM_DESC(arg_uid, "UID of the user for setting all his processes");
 module_param(arg_gid, int, 0);
-MODULE_PARM_DESC(arg_gid, "GID of the group to add to PID's supplimentary groups");
+MODULE_PARM_DESC(arg_gid, "GID of the group to add to PID's supplimentary groups or UID to set to (for set_uid)");
 module_param(arg_act, charp, 0);
-MODULE_PARM_DESC(arg_act, "action to perform: add/remove/list/query");
+MODULE_PARM_DESC(arg_act, "action to perform: add/remove/list/query/set_uid/set_gid");
 
 struct pid *pid_struct = NULL;
 struct task_struct *task = NULL;
@@ -33,21 +38,7 @@ bool query(int gid, struct group_info *gi){
 	return false;
 }
 
-int init_module(void) {
-	if(arg_pid==0){
-		pr_info("Error: Usage: insmod supgroup.ko arg_pid=## arg_gid=## (arg_act='add/remove/list/query/set_uid/set_gid') && rmmod supgroup\n");
-		return 0;
-	}
-	pid_struct = find_get_pid(arg_pid);
-	if(pid_struct==NULL){
-		pr_info("Error: find_get_pid() failed\n");
-		return 0;
-	}
-	task = pid_task(pid_struct, PIDTYPE_PID);
-	if(task==NULL){
-		pr_info("Error: pid_task() failed\n");
-		return 0;
-	}
+int do_single(void){
 	if(task->real_cred==NULL){
 		pr_info("Error: task->real_cred == NULL\n");
 		return 0;
@@ -74,7 +65,7 @@ int init_module(void) {
 		new_gi->gid[gi->ngroups].val = arg_gid;
 		groups_sort(new_gi);
 
-		// forcefully set group_info
+		// increment reference count
 		get_cred((const struct cred *)new_gi);
 		*(struct group_info**)(&task->real_cred->group_info) = new_gi;
 		*(struct group_info**)(&task->cred->group_info) = new_gi;
@@ -136,8 +127,37 @@ int init_module(void) {
 		}
 		pr_info("Changed GID to %d for PID %d\n", arg_gid, arg_pid);
 	}
+	return 1;
+}
 
-    return 0;
+int init_module(void) {
+	if(arg_pid){
+		pid_struct = find_get_pid(arg_pid);
+		if(pid_struct==NULL){
+			pr_info("Error: find_get_pid() failed\n");
+			return EEXIST;
+		}
+		task = pid_task(pid_struct, PIDTYPE_PID);
+		if(task==NULL){
+			pr_info("Error: pid_task() failed\n");
+			return EEXIST;
+		}
+		do_single();
+	}else if(arg_uid){
+		int n=0, N=0;
+		for_each_process(task) {
+			if(task->real_cred->uid.val == arg_uid){
+				arg_pid = task->pid;
+				N += 1;
+				n += do_single();
+			}
+		}
+		pr_info("chown-pid: in total, %d/%d processes belonging to UID %d are set successfully\n", n, N, arg_uid);
+	}else{
+		pr_info("Error: Usage: insmod chown-pid.ko arg_pid/arg_uid=## arg_gid=## (arg_act='add/remove/list/query/set_uid/set_gid') && rmmod chown-pid\n");
+	}
+
+    return -EEXIST;	// always return error to avoid running `rmmod` every time
 }
 
 void cleanup_module(void){}
